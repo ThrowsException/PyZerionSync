@@ -12,8 +12,8 @@ from multiprocessing.dummy import Pool as ThreadPool
 client = MongoClient()
 db = client.zerion
 
-ZerionClientKey = "717ee9267011f90f4d97ec1837ec20a30eb6d4c3"
-ZerionRefreshKey ="27dcc34e838fbab8f0d03626a6e4151218d923da"
+ZerionClientKey = ""
+ZerionRefreshKey =""
 AccessToken = "";
 headers = {};
 
