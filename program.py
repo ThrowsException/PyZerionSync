@@ -16,6 +16,7 @@ ZerionClientKey = "717ee9267011f90f4d97ec1837ec20a30eb6d4c3"
 ZerionRefreshKey ="27dcc34e838fbab8f0d03626a6e4151218d923da"
 AccessToken = "";
 headers = {};
+threads = 9
 
 def accessToken():
 	payload = {
@@ -42,28 +43,38 @@ def profile(profile):
 	
 	r = requests.get('https://abctest.iformbuilder.com/exzact/api/profiles/' + str(profile), headers=headers)
 
-	data = r.json();
+	data = r.json()
 	profile_collection = db.profile
 
 	profile_collection.update({"ID": profile}, data, True)
 
 def pages(profile):
 	
-	r = requests.get('https://abctest.iformbuilder.com/exzact/api/profiles/'+ str(profile) + '/pages', headers=headers)
+	r = requests.get('https://abctest.iformbuilder.com/exzact/api/profiles/'+ str(profile) + '/pages?DETAIL=true', headers=headers)
 
 	return r.json()["PAGES"];
 
 def page(profile, page):
 	
-	print "Get page " + str(page) + " for profile " + str(profile)
-	r = requests.get('https://abctest.iformbuilder.com/exzact/api/profiles/'+ str(profile) +'/pages/' + str(page), headers=headers)
+	page_id_str = str(page["ID"])
+	page_id = page["ID"]
 
-	data = r.json();
+	print "Get page " + page_id_str + " for profile " + str(profile)
 	page_collection = db.page
 
-	data["PAGE"]["PROFILE"] = profile
+	p = page_collection.find_one({"PAGE.ID": page_id})
 
-	page_collection.update({"PAGE.ID": page, "PAGE.PROFILE": profile}, data, True)
+	if p != None and p["PAGE"]["VERSION"] == page["VERSION"]:
+		print "page is same version not syncing"
+	else:
+		r = requests.get('https://abctest.iformbuilder.com/exzact/api/profiles/'+ str(profile) +'/pages/' + page_id_str, headers=headers)
+
+		data = r.json()
+		page_collection = db.page
+
+		data["PAGE"]["PROFILE"] = profile
+
+		page_collection.update({"PAGE.ID": page_id, "PAGE.PROFILE": profile}, data, True)
 
 def page_star(a_b):
     """Convert `f([1,2])` to `f(1,2)` call."""
@@ -80,7 +91,7 @@ def optionlist(profile, optionlist):
 	print "Get optionlist " + str(optionlist) + " for profile " + str(profile)
 	r = requests.get('https://abctest.iformbuilder.com/exzact/api/profiles/'+ str(profile) +'/optionlists/' + str(optionlist), headers=headers)
 
-	data = r.json();
+	data = r.json()
 	optionlist_collection = db.optionlist
 
 	data["OPTIONLIST"]["PROFILE"] = profile
@@ -100,11 +111,9 @@ def syncPages(zprofile):
 
 	print "get pages for " + zprofile['NAME']
 	zpages = pages(zprofile['ID'])
-
-	ids = [zpage['ID'] for zpage in zpages]
 	
-	ppool = ThreadPool(8)
-	ppool.map(page_star, itertools.izip(itertools.repeat(zprofile['ID']), ids))
+	ppool = ThreadPool(threads)
+	ppool.map(page_star, itertools.izip(itertools.repeat(zprofile['ID']), zpages))
 
 def syncOptionlists(zprofile): 
 
@@ -113,7 +122,7 @@ def syncOptionlists(zprofile):
 
 	ids = [zoptionlist['ID'] for zoptionlist in zoptionlists]
 	
-	ppool = ThreadPool(8)
+	ppool = ThreadPool(threads)
 	ppool.map(optionlist_star, itertools.izip(itertools.repeat(zprofile['ID']), ids))
 
 if __name__ == '__main__':
@@ -125,17 +134,17 @@ if __name__ == '__main__':
 	print "get Profiles"
 	data = profiles()
 	
-	pool = ThreadPool(8)
+	pool = ThreadPool(threads)
 	pool.map(syncProfile, data)
 	pool.close();
 	pool.join();
 
-	pool = ThreadPool(8)
+	pool = ThreadPool(threads)
 	pool.map(syncPages, data)
 	pool.close();
 	pool.join();
 
-	pool = ThreadPool(8)
+	pool = ThreadPool(threads)
 	pool.map(syncOptionlists, data)
 	pool.close();
 	pool.join();
