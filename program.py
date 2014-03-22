@@ -44,9 +44,13 @@ def profile(profile):
 	r = requests.get('https://abctest.iformbuilder.com/exzact/api/profiles/' + str(profile), headers=headers)
 
 	data = r.json()
-	profile_collection = db.profile
 
-	profile_collection.update({"ID": profile}, data, True)
+	if data.STATUS == True:
+		del data.STATUS
+		profile_collection = db.profile
+		profile_collection.update({"ID": profile}, data, True)
+	else:
+		print r.url + "return status False"
 
 def pages(profile):
 	
@@ -70,11 +74,14 @@ def page(profile, page):
 		r = requests.get('https://abctest.iformbuilder.com/exzact/api/profiles/'+ str(profile) +'/pages/' + page_id_str, headers=headers)
 
 		data = r.json()
-		page_collection = db.page
+		if data.STATUS == True:
+			page_collection = db.page
+			del data.STATUS
+			data["PAGE"]["PROFILE"] = profile
 
-		data["PAGE"]["PROFILE"] = profile
-
-		page_collection.update({"PAGE.ID": page_id, "PAGE.PROFILE": profile}, data, True)
+			page_collection.update({"PAGE.ID": page_id, "PAGE.PROFILE": profile}, data, True)
+		else:
+			print r.url + "return status False"
 
 def page_star(a_b):
     """Convert `f([1,2])` to `f(1,2)` call."""
@@ -92,11 +99,15 @@ def optionlist(profile, optionlist):
 	r = requests.get('https://abctest.iformbuilder.com/exzact/api/profiles/'+ str(profile) +'/optionlists/' + str(optionlist), headers=headers)
 
 	data = r.json()
-	optionlist_collection = db.optionlist
+	if data.STATUS == True:
+		del data.STATUS
+		optionlist_collection = db.optionlist
 
-	data["OPTIONLIST"]["PROFILE"] = profile
+		data["OPTIONLIST"]["PROFILE"] = profile
 
-	optionlist_collection.update({"OPTIONLIST.ID": optionlist, "OPTIONLIST.PROFILE": profile}, data, True)
+		optionlist_collection.update({"OPTIONLIST.ID": optionlist, "OPTIONLIST.PROFILE": profile}, data, True)
+	else:
+			print r.url + "return status False"
 
 def optionlist_star(a_b):
     """Convert `f([1,2])` to `f(1,2)` call."""
