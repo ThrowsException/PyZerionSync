@@ -12,11 +12,11 @@ from multiprocessing.dummy import Pool as ThreadPool
 client = MongoClient()
 db = client.zerion
 
-ZerionClientKey = ""
-ZerionRefreshKey =""
+ZerionClientKey = "717ee9267011f90f4d97ec1837ec20a30eb6d4c3"
+ZerionRefreshKey ="27dcc34e838fbab8f0d03626a6e4151218d923da"
 AccessToken = "";
 headers = {};
-threads = 9
+threads = 1
 
 def accessToken():
 	payload = {
@@ -26,7 +26,8 @@ def accessToken():
 	}
 	
 	r = requests.post('https://abctest.iformbuilder.com/exzact/api/oauth/token', data=payload)
-	global AccessToken 
+	global AccessToken
+	print(r.json())
 	AccessToken = r.json()['access_token']
 	
 	global headers 
@@ -45,8 +46,7 @@ def profile(profile):
 
 	data = r.json()
 
-	if data.STATUS == True:
-		del data.STATUS
+	if data["STATUS"] == True:
 		profile_collection = db.profile
 		profile_collection.update({"ID": profile}, data, True)
 	else:
@@ -74,9 +74,8 @@ def page(profile, page):
 		r = requests.get('https://abctest.iformbuilder.com/exzact/api/profiles/'+ str(profile) +'/pages/' + page_id_str, headers=headers)
 
 		data = r.json()
-		if data.STATUS == True:
+		if data["STATUS"] == True:
 			page_collection = db.page
-			del data.STATUS
 			data["PAGE"]["PROFILE"] = profile
 
 			page_collection.update({"PAGE.ID": page_id, "PAGE.PROFILE": profile}, data, True)
@@ -99,13 +98,12 @@ def optionlist(profile, optionlist):
 	r = requests.get('https://abctest.iformbuilder.com/exzact/api/profiles/'+ str(profile) +'/optionlists/' + str(optionlist), headers=headers)
 
 	data = r.json()
-	if data.STATUS == True:
-		del data.STATUS
+	if data["STATUS"] == True:
 		optionlist_collection = db.optionlist
 
 		data["OPTIONLIST"]["PROFILE"] = profile
 
-		optionlist_collection.update({"OPTIONLIST.ID": optionlist, "OPTIONLIST.PROFILE": profile}, data, True)
+		optionlist_collection.update({"OPTIONLIST.OPTION_LIST.ID": optionlist, "OPTIONLIST.PROFILE": profile}, data, True)
 	else:
 			print r.url + "return status False"
 
